@@ -36,15 +36,15 @@ jobs:
       - name: 组装发布目录
         shell: pwsh
         run: |
-          $dst = "dist\NEXUS-v1.0.1-win64"
-          Rename-Item -Path "dist\NEXUS" -NewName "NEXUS-v1.0.1-win64"
+          $dst = "dist\NEXUS-v1.0.2-win64"
+          Rename-Item -Path "dist\NEXUS" -NewName "NEXUS-v1.0.2-win64"
           Copy-Item README.md, 使用说明.txt -Destination $dst -Force
           Get-ChildItem $dst | Select-Object Name, Length
 
       - name: 启动冒烟测试（真实运行 exe → 健康检查 → 关闭）
         shell: pwsh
         run: |
-          $exe = Resolve-Path "dist\NEXUS-v1.0.1-win64\NEXUS.exe"
+          $exe = Resolve-Path "dist\NEXUS-v1.0.2-win64\NEXUS.exe"
           $p = Start-Process -FilePath $exe -PassThru
           $ok = $false
           for ($i = 0; $i -lt 30; $i++) {
@@ -56,7 +56,7 @@ jobs:
           }
           if (-not $ok) {
             Write-Output "--- nexus.log ---"
-            if (Test-Path "dist\NEXUS-v1.0.1-win64\nexus.log") { Get-Content "dist\NEXUS-v1.0.1-win64\nexus.log" }
+            if (Test-Path "dist\NEXUS-v1.0.2-win64\nexus.log") { Get-Content "dist\NEXUS-v1.0.2-win64\nexus.log" }
             Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
             throw "exe 启动后健康检查失败"
           }
@@ -72,13 +72,13 @@ jobs:
       - name: 压缩发布包
         shell: pwsh
         run: |
-          Compress-Archive -Path "dist\NEXUS-v1.0.1-win64" -DestinationPath "dist\NEXUS-v1.0.1-win64.zip" -CompressionLevel Optimal
-          Get-Item "dist\NEXUS-v1.0.1-win64.zip" | Select-Object Name, Length
+          Compress-Archive -Path "dist\NEXUS-v1.0.2-win64" -DestinationPath "dist\NEXUS-v1.0.2-win64.zip" -CompressionLevel Optimal
+          Get-Item "dist\NEXUS-v1.0.2-win64.zip" | Select-Object Name, Length
 
       - uses: actions/upload-artifact@v4
         with:
           name: NEXUS-windows
-          path: dist/NEXUS-v1.0.1-win64.zip
+          path: dist/NEXUS-v1.0.2-win64.zip
           if-no-files-found: error
           retention-days: 30
 
@@ -88,6 +88,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ github.ref_name }}" "dist\NEXUS-v1.0.1-win64.zip" `
+          gh release create "${{ github.ref_name }}" "dist\NEXUS-v1.0.2-win64.zip" `
             --title "NEXUS ${{ github.ref_name }}" `
             --notes "Windows 免安装版：解压后双击 NEXUS.exe"
