@@ -1,22 +1,22 @@
 @echo off
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
-title NEXUS åœæ­¢ç›‘æŽ§
+title NEXUS Í£Ö¹¼à¿Ø
 
 set "PORT=8768"
 if exist "%~dp0nexus.port" (
   for /f "usebackq delims=" %%p in ("%~dp0nexus.port") do set "PORT=%%p"
 )
 
-echo   æ­£åœ¨åœæ­¢ NEXUS é‡‡æ ·æœåŠ¡ï¼ˆç«¯å£ !PORT!ï¼‰...
+echo   ÕýÔÚÍ£Ö¹ NEXUS ²ÉÑù·þÎñ£¨¶Ë¿Ú !PORT!£©...
 powershell -NoProfile -Command "try{Invoke-WebRequest -UseBasicParsing -Method POST -TimeoutSec 3 http://127.0.0.1:!PORT!/api/shutdown | Out-Null}catch{}" >nul 2>nul
 timeout /t 1 /nobreak >nul
 
-rem å…œåº•ï¼šæŒ‰å‘½ä»¤è¡ŒåŒ¹é…æ”¶æŽ‰æ®‹ç•™çš„ pythonw/python è¿›ç¨‹
+rem ¶µµ×£º°´ÃüÁîÐÐÆ¥ÅäÊÕµô²ÐÁôµÄ pythonw/python ½ø³Ì
 powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='pythonw.exe' or Name='python.exe'\" | Where-Object { $_.CommandLine -like '*sampler.py*' } | ForEach-Object { try{ Stop-Process -Id $_.ProcessId -Force }catch{} }" >nul 2>nul
 
 if exist "%~dp0nexus.port" del /q "%~dp0nexus.port" >nul 2>nul
 if exist "%~dp0__pycache__" rd /s /q "%~dp0__pycache__" >nul 2>nul
-echo   å·²åœæ­¢ã€‚å¯ä»¥ç›´æŽ¥å…³é—­æµè§ˆå™¨é¡µé¢ã€‚
+echo   ÒÑÍ£Ö¹¡£¿ÉÒÔÖ±½Ó¹Ø±Õä¯ÀÀÆ÷Ò³Ãæ¡£
 timeout /t 2 /nobreak >nul
 exit /b 0
