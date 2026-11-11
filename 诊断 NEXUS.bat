@@ -2,21 +2,21 @@
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 chcp 65001 >nul 2>nul
-title NEXUS çŽ¯å¢ƒè¯Šæ–­
-set "REPORT=%~dp0è¯Šæ–­ç»“æžœ.txt"
-> "%REPORT%" echo NEXUS çŽ¯å¢ƒè¯Šæ–­æŠ¥å‘Š
->> "%REPORT%" echo æ—¶é—´: %DATE% %TIME%
->> "%REPORT%" echo ç›®å½•: %~dp0
->> "%REPORT%" echo ç³»ç»Ÿ: %OS% %PROCESSOR_ARCHITECTURE%
+title NEXUS »·¾³Õï¶Ï
+set "REPORT=%~dp0Õï¶Ï½á¹û.txt"
+> "%REPORT%" echo NEXUS »·¾³Õï¶Ï±¨¸æ
+>> "%REPORT%" echo Ê±¼ä: %DATE% %TIME%
+>> "%REPORT%" echo Ä¿Â¼: %~dp0
+>> "%REPORT%" echo ÏµÍ³: %OS% %PROCESSOR_ARCHITECTURE%
 >> "%REPORT%" echo.
 
 echo ==================================================
-echo   NEXUS çŽ¯å¢ƒè¯Šæ–­ï¼ˆç»“æžœåŒæ—¶å†™å…¥ è¯Šæ–­ç»“æžœ.txtï¼‰
+echo   NEXUS »·¾³Õï¶Ï£¨½á¹ûÍ¬Ê±Ð´Èë Õï¶Ï½á¹û.txt£©
 echo ==================================================
 echo.
 
-echo [1] æŸ¥æ‰¾ Python
-echo [1] æŸ¥æ‰¾ Python >> "%REPORT%"
+echo [1] ²éÕÒ Python
+echo [1] ²éÕÒ Python >> "%REPORT%"
 set "FOUND="
 where py >> "%REPORT%" 2>&1
 if not errorlevel 1 (
@@ -26,45 +26,45 @@ if not errorlevel 1 (
 where python >> "%REPORT%" 2>&1
 python -c "import sys;print('python ->', sys.version.split()[0], sys.executable)" >> "%REPORT%" 2>&1
 if not defined FOUND for /f "usebackq delims=" %%i in (`python -c "import sys;sys.stdout.write(sys.executable)" 2^>nul`) do set "FOUND=%%i"
-if defined FOUND (echo   å¯ç”¨è§£é‡Šå™¨: !FOUND!) else (echo   æœªæ‰¾åˆ°å¯ç”¨çš„ Python 3)
->> "%REPORT%" echo å¯ç”¨è§£é‡Šå™¨: !FOUND!
+if defined FOUND (echo   ¿ÉÓÃ½âÊÍÆ÷: !FOUND!) else (echo   Î´ÕÒµ½¿ÉÓÃµÄ Python 3)
+>> "%REPORT%" echo ¿ÉÓÃ½âÊÍÆ÷: !FOUND!
 >> "%REPORT%" echo.
 
-echo [2] æ£€æŸ¥ psutil
->> "%REPORT%" echo [2] æ£€æŸ¥ psutil >> "%REPORT%"
+echo [2] ¼ì²é psutil
+>> "%REPORT%" echo [2] ¼ì²é psutil >> "%REPORT%"
 if defined FOUND (
   "!FOUND!" -c "import psutil;print('psutil', psutil.__version__)" >> "%REPORT%" 2>&1
   "!FOUND!" -c "import psutil" >nul 2>nul
-  if errorlevel 1 (echo   psutil æœªå®‰è£…) else (echo   psutil æ­£å¸¸)
-) else (echo   è·³è¿‡)
+  if errorlevel 1 (echo   psutil Î´°²×°) else (echo   psutil Õý³£)
+) else (echo   Ìø¹ý)
 >> "%REPORT%" echo.
 
-echo [3] ç«¯å£ä¸Žè¿è¡ŒçŠ¶æ€
->> "%REPORT%" echo [3] ç«¯å£ä¸Žè¿è¡ŒçŠ¶æ€ >> "%REPORT%"
+echo [3] ¶Ë¿ÚÓëÔËÐÐ×´Ì¬
+>> "%REPORT%" echo [3] ¶Ë¿ÚÓëÔËÐÐ×´Ì¬ >> "%REPORT%"
 netstat -ano | findstr ":8768" >> "%REPORT%" 2>&1
-powershell -NoProfile -Command "try{$r=Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 http://127.0.0.1:8768/api/health; Write-Output ('å¥åº·æ£€æŸ¥: ' + $r.StatusCode + ' ' + $r.Content)}catch{Write-Output 'å¥åº·æ£€æŸ¥: æœªå“åº”'}" >> "%REPORT%" 2>&1
-for /f "usebackq delims=" %%l in (`powershell -NoProfile -Command "try{$r=Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 http://127.0.0.1:8768/api/health; Write-Output ('  ' + $r.Content)}catch{Write-Output '  æœåŠ¡æœªè¿è¡Œ'}"`) do echo %%l
+powershell -NoProfile -Command "try{$r=Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 http://127.0.0.1:8768/api/health; Write-Output ('½¡¿µ¼ì²é: ' + $r.StatusCode + ' ' + $r.Content)}catch{Write-Output '½¡¿µ¼ì²é: Î´ÏìÓ¦'}" >> "%REPORT%" 2>&1
+for /f "usebackq delims=" %%l in (`powershell -NoProfile -Command "try{$r=Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 http://127.0.0.1:8768/api/health; Write-Output ('  ' + $r.Content)}catch{Write-Output '  ·þÎñÎ´ÔËÐÐ'}"`) do echo %%l
 >> "%REPORT%" echo.
 
-echo [4] æ–‡ä»¶æ£€æŸ¥
->> "%REPORT%" echo [4] æ–‡ä»¶æ£€æŸ¥ >> "%REPORT%"
+echo [4] ÎÄ¼þ¼ì²é
+>> "%REPORT%" echo [4] ÎÄ¼þ¼ì²é >> "%REPORT%"
 for %%f in (sampler.py web\index.html web\app.js web\gl.js web\engines.js) do (
-  if exist "%%f" (echo   OK   %%f) else (echo   ç¼ºå¤± %%f)
+  if exist "%%f" (echo   OK   %%f) else (echo   È±Ê§ %%f)
   >> "%REPORT%" echo %%f
 )
 >> "%REPORT%" echo.
 
-echo [5] ç›´æŽ¥å‰å°è¿è¡Œä¸€æ¬¡é‡‡æ ·ï¼ˆèƒ½çœ‹åˆ°çœŸå®žæŠ¥é”™ï¼‰
->> "%REPORT%" echo [5] å‰å°é‡‡æ ·æµ‹è¯• >> "%REPORT%"
+echo [5] Ö±½ÓÇ°Ì¨ÔËÐÐÒ»´Î²ÉÑù£¨ÄÜ¿´µ½ÕæÊµ±¨´í£©
+>> "%REPORT%" echo [5] Ç°Ì¨²ÉÑù²âÊÔ >> "%REPORT%"
 if defined FOUND (
   "!FOUND!" "%~dp0sampler.py" --once >> "%REPORT%" 2>&1
-  if errorlevel 1 (echo   [X] é‡‡æ ·å¤±è´¥ï¼Œè§ä¸Šæ–¹è¾“å‡º) else (echo   [OK] é‡‡æ ·æ­£å¸¸)
-) else (echo   è·³è¿‡)
+  if errorlevel 1 (echo   [X] ²ÉÑùÊ§°Ü£¬¼ûÉÏ·½Êä³ö) else (echo   [OK] ²ÉÑùÕý³£)
+) else (echo   Ìø¹ý)
 >> "%REPORT%" echo.
 
 echo.
-echo è¯Šæ–­å®Œæˆã€‚æŠ¥å‘Šå·²ä¿å­˜ï¼š%REPORT%
-echo å¦‚æžœç¬¬ 5 æ­¥æŠ¥é”™ï¼Œè¯·æŠŠæŠ¥å‘Šé‡Œçš„é”™è¯¯æ–‡å­—å‘ç»™æˆ‘ã€‚
+echo Õï¶ÏÍê³É¡£±¨¸æÒÑ±£´æ£º%REPORT%
+echo Èç¹ûµÚ 5 ²½±¨´í£¬Çë°Ñ±¨¸æÀïµÄ´íÎóÎÄ×Ö·¢¸øÎÒ¡£
 echo.
 pause
 exit /b 0
