@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEXUS · 实时运算中枢</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ============ A. 顶部控制栏 ============ -->
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="13.4" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".55"/>
+        <circle cx="16" cy="16" r="9.2" fill="none" stroke="currentColor" stroke-width=".7" opacity=".3"/>
+        <path d="M7 24 L24 7" stroke="currentColor" stroke-width="1.5" opacity=".85"/>
+        <circle cx="16" cy="16" r="2.1" fill="currentColor"/>
+      </svg>
+      <div class="brand-text">
+        <div class="brand-name">NEXUS</div>
+        <div class="brand-sub">SYSTEM OBSERVATORY</div>
+      </div>
+    </div>
+
+    <div class="top-status">
+      <span class="dot" id="connDot"></span>
+      <span id="connText">本机实时连接</span>
+      <span class="sep">·</span>
+      <span id="sampleTime" class="mono">--:--:--</span>
+      <span class="sep" id="seqWrap">·</span>
+      <span id="seqText" class="mono dim">SEQ --</span>
+    </div>
+
+    <div class="top-actions">
+      <button class="tbtn" id="btnTurbo" title="在独立映射结果上叠加约 2.8 倍视觉倍率">
+        <span class="ico">⚡</span>极速分发
+      </button>
+      <button class="tbtn" id="btnFull" title="浏览器全屏（Esc 退出）">
+        <span class="ico">⛶</span><span id="fullLabel">全屏</span>
+      </button>
+      <div class="theme-group" id="themeGroup" role="group" aria-label="配色">
+        <button class="theme" data-theme="silver" title="冷白银"><i style="--c:#D2DCE5"></i></button>
+        <button class="theme" data-theme="gold" title="香槟金"><i style="--c:#CBB68A"></i></button>
+        <button class="theme" data-theme="blue" title="深海蓝"><i style="--c:#43A9CF"></i></button>
+        <button class="theme" data-theme="violet" title="星云紫"><i style="--c:#AFA2D9"></i></button>
+      </div>
+      <button class="tbtn" id="btnParams"><span class="ico">⚙</span>参数</button>
+    </div>
+  </header>
+
+  <!-- ============ B. 中央主视觉 ============ -->
+  <main class="stage" id="stage">
+    <div class="stage-canvas" id="stageCanvas">
+      <canvas id="gl"></canvas>
+      <div class="core-label">
+        <div class="core-kicker">NEURAL COMPUTE CORE</div>
+        <div class="core-title">NX<span>·01</span></div>
+        <div class="core-meta" id="coreMeta">神经元 320 · 连接 1,024</div>
+        <div class="core-meta dim" id="coreMeta2">异步计算阵列 · 本地采样</div>
+      </div>
+      <div class="engine-tag" id="engineTag">
+        <span class="et-dot"></span><span id="engineName">环状流场</span>
+        <span class="et-sub" id="engineSub">RING FLOW FIELD</span>
+      </div>
+      <div class="hint" id="hint">鼠标移到神经元上可牵引 · 点击注入一次局部能量</div>
+      <div class="offline-banner" id="offline">采样服务未连接，正在重试……</div>
+    </div>
+
+    <aside class="receivers" id="receivers"><!-- JS 注入 --></aside>
+  </main>
+
+  <!-- ============ C. 下方六个看板 ============ -->
+  <section class="boards" id="boards">
+    <article class="board" data-board="cpu">
+      <header><h3>处理器</h3><div class="bval"><b id="bCpuVal">--</b><i>%</i></div>
+        <button class="more" data-detail="cpu">详情</button></header>
+      <div class="bbody"><canvas></canvas><div class="det" hidden></div></div>
+      <footer><span id="bCpuSub">逻辑核心 --</span><span id="bCpuSub2" class="mono dim">--</span></footer>
+    </article>
+    <article class="board" data-board="mem">
+      <header><h3>内存</h3><div class="bval"><b id="bMemVal">--</b><i>%</i></div>
+        <button class="more" data-detail="mem">详情</button></header>
+      <div class="bbody"><canvas></canvas><div class="det" hidden></div></div>
+      <footer><span id="bMemSub">-- / --</span><span id="bMemSub2" class="mono dim">--</span></footer>
+    </article>
+    <article class="board" data-board="gpu">
+      <header><h3>显卡</h3><div class="bval"><b id="bGpuVal">--</b><i>%</i></div>
+        <button class="more" data-detail="gpu">详情</button></header>
+      <div class="bbody"><canvas></canvas><div class="det" hidden></div></div>
+      <footer><span id="bGpuSub">--</span><span id="bGpuSub2" class="mono dim">--</span></footer>
+    </article>
+    <article class="board" data-board="down">
+      <header><h3>下载</h3><div class="bval"><b id="bDownVal">--</b><i id="bDownUnit">KiB/s</i></div>
+        <button class="more" data-detail="down">详情</button></header>
+      <div class="bbody"><canvas></canvas><div class="det" hidden></div></div>
+      <footer><span id="bDownSub">--</span><span id="bDownSub2" class="mono dim">--</span></footer>
+    </article>
+    <article class="board" data-board="up">
+      <header><h3>上传</h3><div class="bval"><b id="bUpVal">--</b><i id="bUpUnit">KiB/s</i></div>
+        <button class="more" data-detail="up">详情</button></header>
+      <div class="bbody"><canvas></canvas><div class="det" hidden></div></div>
+      <footer><span id="bUpSub">--</span><span id="bUpSub2" class="mono dim">--</span></footer>
+    </article>
+    <article class="board" data-board="sys">
+      <header><h3>系统采样</h3><div class="bval"><b id="bSysVal">--</b><i>进程</i></div>
+        <button class="more" data-detail="sys">详情</button></header>
+      <div class="bbody"><canvas></canvas><div class="det" hidden></div></div>
+      <footer><span id="bSysSub">线程 --</span><span id="bSysSub2" class="mono dim">--</span></footer>
+    </article>
+  </section>
+
+  <!-- ============ D. 状态栏 ============ -->
+  <footer class="statusbar">
+    <span class="sb-item" id="sbHost">本机</span>
+    <span class="sb-item"><i class="dot" id="sbDot"></i><span id="sbState">采样正常</span></span>
+    <span class="sb-item" id="sbParts">粒子 12,000</span>
+    <span class="sb-item" id="sbFps">FPS --</span>
+    <span class="sb-item" id="sbRender">WebGL2 实例化</span>
+    <span class="sb-item" id="sbUptime">运行 00:00:00</span>
+    <button class="sb-end" id="btnStop">结束监控</button>
+  </footer>
+
+  <!-- ============ 参数面板 ============ -->
+  <div class="drawer-mask" id="mask" hidden></div>
+  <aside class="drawer" id="drawer" hidden>
+    <div class="drawer-head">
+      <h2>参数</h2>
+      <button class="x" id="btnCloseParams" aria-label="关闭">×</button>
+    </div>
+    <div class="drawer-body">
+      <section class="grp">
+        <div class="row"><label>整体动效倍率</label><output id="oScale">1.00</output></div>
+        <input type="range" id="rScale" min="0.4" max="2" step="0.05" value="1">
+        <div class="row"><label>粒子数量</label><output id="oParts">12000</output></div>
+        <input type="range" id="rParts" min="2000" max="20000" step="500" value="12000">
+        <div class="row"><label>光感强度</label><output id="oGlow">0.85</output></div>
+        <input type="range" id="rGlow" min="0.2" max="1.5" step="0.05" value="0.85">
+        <div class="row"><label>圆环计算节拍</label><output id="oBeat">1.00</output></div>
+        <input type="range" id="rBeat" min="0.3" max="2" step="0.05" value="1">
+      </section>
+      <section class="grp">
+        <label class="sw"><input type="checkbox" id="cLightFx" checked><span>神经传导与计算光效</span></label>
+        <label class="sw"><input type="checkbox" id="cOverload" checked><span>过载特效</span></label>
+        <label class="sw"><input type="checkbox" id="cMouse" checked><span>鼠标交互</span></label>
+        <label class="sw"><input type="checkbox" id="cFocus"><span>点击接收端自动聚焦</span></label>
+      </section>
+      <section class="grp">
+        <h4>过载门槛 <span class="dim">（严格大于才触发）</span></h4>
+        <div class="thr" data-ch="cpu"><label>处理器 %</label><input type="number" id="thCpu" value="45" min="1" max="100" step="1"><button class="prev" data-preview="cpu">预览</button></div>
+        <div class="thr" data-ch="mem"><label>内存 %</label><input type="number" id="thMem" value="60" min="1" max="100" step="1"><button class="prev" data-preview="mem">预览</button></div>
+        <div class="thr" data-ch="gpu"><label>显卡 %</label><input type="number" id="thGpu" value="50" min="1" max="100" step="1"><button class="prev" data-preview="gpu">预览</button></div>
+        <div class="thr" data-ch="down"><label>下载 KiB/s</label><input type="number" id="thDown" value="512" min="8" max="1048576" step="8"><button class="prev" data-preview="down">预览</button></div>
+        <div class="thr" data-ch="up"><label>上传 KiB/s</label><input type="number" id="thUp" value="128" min="4" max="1048576" step="4"><button class="prev" data-preview="up">预览</button></div>
+      </section>
+      <section class="grp">
+        <button class="wide" id="btnReset">恢复默认设置</button>
+        <p class="tip">“过载”仅表示超过你设定的视觉提示门槛，不代表硬件危险或故障诊断。</p>
+      </section>
+    </div>
+  </aside>
+
+  <div class="toast" id="toast" hidden></div>
+</div>
+
+<script src="gl.js"></script>
+<script src="engines.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
