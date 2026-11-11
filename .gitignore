@@ -1,0 +1,7 @@
+build/
+dist/
+__pycache__/
+*.pyc
+nexus.log
+nexus.port
+诊断结果.txt
