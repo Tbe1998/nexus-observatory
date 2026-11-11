@@ -1,0 +1,93 @@
+name: build-windows
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install psutil pyinstaller pillow
+
+      - name: 生成图标
+        run: python tools/make_icon.py
+
+      - name: 采样自检（源码）
+        run: python sampler.py --once
+
+      - name: 打包 exe（onedir，含 web 资源）
+        run: pyinstaller --noconfirm --clean --windowed --name NEXUS --icon build\nexus.ico --add-data "web;web" sampler.py
+
+      - name: 组装发布目录
+        shell: pwsh
+        run: |
+          $dst = "dist\NEXUS-v1.0.1-win64"
+          Rename-Item -Path "dist\NEXUS" -NewName "NEXUS-v1.0.1-win64"
+          Copy-Item README.md, 使用说明.txt -Destination $dst -Force
+          Get-ChildItem $dst | Select-Object Name, Length
+
+      - name: 启动冒烟测试（真实运行 exe → 健康检查 → 关闭）
+        shell: pwsh
+        run: |
+          $exe = Resolve-Path "dist\NEXUS-v1.0.1-win64\NEXUS.exe"
+          $p = Start-Process -FilePath $exe -PassThru
+          $ok = $false
+          for ($i = 0; $i -lt 30; $i++) {
+            Start-Sleep -Seconds 1
+            try {
+              $r = Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 "http://127.0.0.1:8768/api/health"
+              if ($r.StatusCode -eq 200 -and $r.Content -match 'nexus') { $ok = $true; break }
+            } catch {}
+          }
+          if (-not $ok) {
+            Write-Output "--- nexus.log ---"
+            if (Test-Path "dist\NEXUS-v1.0.1-win64\nexus.log") { Get-Content "dist\NEXUS-v1.0.1-win64\nexus.log" }
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            throw "exe 启动后健康检查失败"
+          }
+          try {
+            $s = Invoke-WebRequest -UseBasicParsing -TimeoutSec 3 "http://127.0.0.1:8768/api/sample"
+            $j = $s.Content | ConvertFrom-Json
+            Write-Output ("采样正常：seq=$($j.seq) cpu=$($j.cpu.pct) mem=$($j.mem.pct) procs=$($j.sys.proc_count)")
+          } catch { Write-Output "采样接口调用失败：$_" }
+          try { Invoke-WebRequest -UseBasicParsing -Method POST -TimeoutSec 3 "http://127.0.0.1:8768/api/shutdown" | Out-Null } catch {}
+          Start-Sleep -Seconds 2
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+
+      - name: 压缩发布包
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist\NEXUS-v1.0.1-win64" -DestinationPath "dist\NEXUS-v1.0.1-win64.zip" -CompressionLevel Optimal
+          Get-Item "dist\NEXUS-v1.0.1-win64.zip" | Select-Object Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NEXUS-windows
+          path: dist/NEXUS-v1.0.1-win64.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: 打标签时附到 Release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" "dist\NEXUS-v1.0.1-win64.zip" `
+            --title "NEXUS ${{ github.ref_name }}" `
+            --notes "Windows 免安装版：解压后双击 NEXUS.exe"
