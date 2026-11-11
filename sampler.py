@@ -78,7 +78,7 @@ def _fatal(msg, detail=""):
                 None, "%s\n\n详细信息见：\n%s" % (msg, LOG_PATH), "NEXUS 启动失败", 0x10)
     except Exception:                                                 # noqa: BLE001
         pass
-APP_VER = "1.0.1"
+APP_VER = "1.0.2"
 WEB = BASE / "web"
 PORT_DEFAULT = 8768
 INTERVAL = 1.0
@@ -122,26 +122,47 @@ class GpuReader:
             self.kind = "none"
             self.reason = "系统未提供可读的 GPU 利用率计数器"
 
-    def read(self):
-        now = time.time()
-        if now - self._cache[0] < 1.5:
-            return self._cache[1]
+    def start(self, interval=2.0):
+        """后台刷新：Windows 的 GPU 计数器要拉 PowerShell，绝不能放在采样主循环里。"""
+        if getattr(self, "_thread", None):
+            return
+        self._interval = interval
+        self._thread = threading.Thread(target=self._loop, name="nexus-gpu", daemon=True)
+        self._thread.start()
+
+    def _loop(self):
+        while True:
+            t0 = time.time()
+            try:
+                self._refresh()
+            except Exception as e:                                    # noqa: BLE001
+                self._cache = (time.time(), {
+                    "available": False, "reason": "GPU 读取失败：%s" % e,
+                    "name": self._name, "engines": {}, "max_engine": "", "max_pct": None})
+            time.sleep(max(0.5, self._interval - (time.time() - t0)))
+
+    def _refresh(self):
         data = None
-        try:
-            if self.kind == "nvidia":
-                data = self._nvidia()
-            elif self.kind == "amdgpu":
-                data = self._amdgpu()
-            elif self.kind == "pdh":
-                data = self._pdh()
-        except Exception as e:                                        # noqa: BLE001
-            self.reason = "GPU 读取失败：%s" % e
-            data = None
+        if self.kind == "nvidia":
+            data = self._nvidia()
+        elif self.kind == "amdgpu":
+            data = self._amdgpu()
+        elif self.kind == "pdh":
+            data = self._pdh()
         if data is None:
             data = {"available": False, "reason": self.reason or "GPU 指标不可用",
                     "name": self._name, "engines": {}, "max_engine": "", "max_pct": None}
-        self._cache = (now, data)
-        return data
+        self._cache = (time.time(), data)
+
+    def read(self):
+        """只返回后台线程最近一次结果，不阻塞。"""
+        ts, data = self._cache
+        if data is None:
+            return {"available": False, "reason": "正在读取 GPU 计数器…", "name": self._name,
+                    "engines": {}, "max_engine": "", "max_pct": None}
+        out = dict(data)
+        out["age_ms"] = int((time.time() - ts) * 1000)
+        return out
 
     def _nvidia(self):
         q = "name,utilization.gpu,memory.used,memory.total"
@@ -235,6 +256,7 @@ class Sampler(threading.Thread):
         self.interval = interval
         self.stop_event = threading.Event()
         self.gpu = GpuReader()
+        self.gpu.start(3.0)
         self.prev_cpu_times: dict[int, float] = {}
         self.prev_net: dict[str, tuple] = {}
         self.prev_ctx = None
@@ -252,21 +274,25 @@ class Sampler(threading.Thread):
             started = time.time()
             try:
                 snap = self.collect()
+                snap["sample_ms"] = int((time.time() - started) * 1000)
                 global SNAPSHOT, SEQ
                 with LOCK:
                     SNAPSHOT = snap
                     SEQ = snap["seq"]
             except Exception as e:                                    # noqa: BLE001
                 self.note = "采样异常：%s" % e
-            sleep = self.interval - (time.time() - started)
-            tick += self.interval
-            self.stop_event.wait(max(0.05, sleep))
+            cost = time.time() - started
+            if cost > self.interval * 1.5:
+                log("采样耗时偏长：%.2fs（序号 %d）" % (cost, self.seq))
+            sleep = max(0.05, self.interval - cost)
+            self.stop_event.wait(sleep)
 
     # -- 单次采样
     def collect(self):
         self.seq += 1
         now = time.time()
         snap = {"seq": self.seq, "ts": int(now * 1000), "interval_ms": int(self.interval * 1000),
+                "sample_ms": 0,
                 "host": socket.gethostname(), "os": platform.platform(),
                 "app": APP_ID, "ver": APP_VER}
 
