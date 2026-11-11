@@ -1,20 +1,20 @@
 @echo off
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
-title NEXUS å¯åŠ¨å™¨
+title NEXUS Æô¶¯Æ÷
 
 rem ===============================================================
-rem  NEXUS Â· å®æ—¶è¿ç®—ä¸­æ¢ â€”â€” Windows å¯åŠ¨å…¥å£
-rem  1) æ‰¾å¯ç”¨çš„ Python 3ï¼ˆè·³è¿‡ Microsoft Store å ä½ç¨‹åºï¼‰
-rem  2) ç¼º psutil è‡ªåŠ¨å®‰è£…
-rem  3) éšè—å¯åŠ¨é‡‡æ ·æœåŠ¡ â†’ ç­‰å¥åº·æ£€æŸ¥é€šè¿‡ â†’ æ‰“å¼€æµè§ˆå™¨
-rem  å¯åŠ¨å¤±è´¥ä¼šåœåœ¨çª—å£é‡Œå¹¶æ‰“å¼€ nexus.logï¼Œä¸å†ä¸€é—ªè€Œè¿‡
+rem  NEXUS ¡¤ ÊµÊ±ÔËËãÖĞÊà ¡ª¡ª Windows Æô¶¯Èë¿Ú
+rem  1) ÕÒ¿ÉÓÃµÄ Python 3£¨Ìø¹ı Microsoft Store Õ¼Î»³ÌĞò£©
+rem  2) È± psutil ×Ô¶¯°²×°
+rem  3) Òş²ØÆô¶¯²ÉÑù·şÎñ ¡ú µÈ½¡¿µ¼ì²éÍ¨¹ı ¡ú ´ò¿ªä¯ÀÀÆ÷
+rem  Æô¶¯Ê§°Ü»áÍ£ÔÚ´°¿ÚÀï²¢´ò¿ª nexus.log£¬²»ÔÙÒ»ÉÁ¶ø¹ı
 rem ===============================================================
 
 set "PYEXE="
 set "PYARG="
 
-rem ---- 1. py å¯åŠ¨å™¨ ----
+rem ---- 1. py Æô¶¯Æ÷ ----
 where py >nul 2>nul
 if not errorlevel 1 (
   for /f "usebackq delims=" %%i in (`py -3 -c "import sys;sys.stdout.write(sys.executable)" 2^>nul`) do (
@@ -22,7 +22,7 @@ if not errorlevel 1 (
   )
 )
 
-rem ---- 2. python å‘½ä»¤ï¼ˆæ’é™¤å•†åº—å ä½ï¼šå®ƒæ‰§è¡Œåæ²¡æœ‰è¾“å‡ºï¼‰ ----
+rem ---- 2. python ÃüÁî£¨ÅÅ³ıÉÌµêÕ¼Î»£ºËüÖ´ĞĞºóÃ»ÓĞÊä³ö£© ----
 if not defined PYEXE (
   where python >nul 2>nul
   if not errorlevel 1 (
@@ -32,7 +32,7 @@ if not defined PYEXE (
   )
 )
 
-rem ---- 3. å¸¸è§å®‰è£…è·¯å¾„å…œåº• ----
+rem ---- 3. ³£¼û°²×°Â·¾¶¶µµ× ----
 if not defined PYEXE (
   for %%d in ("%LOCALAPPDATA%\Programs\Python" "%ProgramFiles%\Python*" "%ProgramFiles(x86)%\Python*") do (
     for /d %%p in (%%d) do (
@@ -43,15 +43,15 @@ if not defined PYEXE (
 
 if not defined PYEXE (
   echo.
-  echo   [!] æ²¡æœ‰æ‰¾åˆ°å¯ç”¨çš„ Python 3ã€‚
+  echo   [!] Ã»ÓĞÕÒµ½¿ÉÓÃµÄ Python 3¡£
   echo.
-  echo       è¯·å®‰è£… Python 3.9 æˆ–æ›´é«˜ç‰ˆæœ¬ï¼šhttps://www.python.org/downloads/
-  echo       å®‰è£…ç¬¬ä¸€æ­¥åŠ¡å¿…å‹¾é€‰ "Add python.exe to PATH"ã€‚
-  echo       å¦‚æœæ˜¯ä» Microsoft Store è£…çš„é‚£ä¸ª python å ä½ç¨‹åºï¼Œè¯·æ”¹ç”¨å®˜ç½‘å®‰è£…åŒ…ã€‚
+  echo       Çë°²×° Python 3.9 »ò¸ü¸ß°æ±¾£ºhttps://www.python.org/downloads/
+  echo       °²×°µÚÒ»²½Îñ±Ø¹´Ñ¡ "Add python.exe to PATH"¡£
+  echo       Èç¹ûÊÇ´Ó Microsoft Store ×°µÄÄÇ¸ö python Õ¼Î»³ÌĞò£¬Çë¸ÄÓÃ¹ÙÍø°²×°°ü¡£
   echo.
-  echo   æŒ‰ä»»æ„é”®æŸ¥çœ‹æ›´è¯¦ç»†çš„ç¯å¢ƒè¯Šæ–­â€¦
+  echo   °´ÈÎÒâ¼ü²é¿´¸üÏêÏ¸µÄ»·¾³Õï¶Ï¡­
   pause >nul
-  call "%~dp0è¯Šæ–­ NEXUS.bat"
+  call "%~dp0Õï¶Ï NEXUS.bat"
   exit /b 1
 )
 
@@ -59,18 +59,18 @@ for %%v in ("%PYEXE%") do set "PYDIR=%%~dpv"
 set "PYW=%PYDIR%pythonw.exe"
 if not exist "%PYW%" set "PYW=%PYEXE%"
 
-echo   ä½¿ç”¨ Pythonï¼š%PYEXE%
+echo   Ê¹ÓÃ Python£º%PYEXE%
 
-rem ---- ä¾èµ– ----
+rem ---- ÒÀÀµ ----
 "%PYEXE%" -c "import psutil" >nul 2>nul
 if errorlevel 1 (
-  echo   ç¼ºå°‘ä¾èµ– psutilï¼Œæ­£åœ¨å®‰è£…â€¦
+  echo   È±ÉÙÒÀÀµ psutil£¬ÕıÔÚ°²×°¡­
   "%PYEXE%" -m pip install --disable-pip-version-check -q -i https://pypi.tuna.tsinghua.edu.cn/simple psutil
   if errorlevel 1 "%PYEXE%" -m pip install --disable-pip-version-check -q --user psutil
   "%PYEXE%" -c "import psutil" >nul 2>nul
   if errorlevel 1 (
     echo.
-    echo   [!] psutil å®‰è£…å¤±è´¥ï¼Œè¯·æ‰‹åŠ¨æ‰§è¡Œï¼š
+    echo   [!] psutil °²×°Ê§°Ü£¬ÇëÊÖ¶¯Ö´ĞĞ£º
     echo       "%PYEXE%" -m pip install psutil
     echo.
     pause
@@ -78,18 +78,18 @@ if errorlevel 1 (
   )
 )
 
-rem ---- å·²åœ¨è¿è¡Œå°±ç›´æ¥å¼€é¡µé¢ ----
+rem ---- ÒÑÔÚÔËĞĞ¾ÍÖ±½Ó¿ªÒ³Ãæ ----
 set "PORT=8768"
 if exist "%~dp0nexus.port" for /f "usebackq delims=" %%p in ("%~dp0nexus.port") do set "PORT=%%p"
 powershell -NoProfile -Command "try{$r=Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 http://127.0.0.1:!PORT!/api/health; if($r.Content -match 'nexus'){exit 0}}catch{}; exit 1" >nul 2>nul
 if not errorlevel 1 (
-  echo   NEXUS å·²åœ¨è¿è¡Œï¼Œç›´æ¥æ‰“å¼€é¡µé¢ã€‚
+  echo   NEXUS ÒÑÔÚÔËĞĞ£¬Ö±½Ó´ò¿ªÒ³Ãæ¡£
   start "" http://127.0.0.1:!PORT!/
   exit /b 0
 )
 
-rem ---- éšè—å¯åŠ¨ ----
-echo   æ­£åœ¨å¯åŠ¨é‡‡æ ·æœåŠ¡â€¦
+rem ---- Òş²ØÆô¶¯ ----
+echo   ÕıÔÚÆô¶¯²ÉÑù·şÎñ¡­
 start "" "%PYW%" "%~dp0sampler.py" --port !PORT! --no-browser
 
 set /a TRIES=0
@@ -101,8 +101,8 @@ set /a TRIES+=1
 if !TRIES! lss 12 goto wait
 
 echo.
-echo   [X] é‡‡æ ·æœåŠ¡åœ¨ 12 ç§’å†…æ²¡æœ‰èµ·æ¥ã€‚
-echo       å¸¸è§åŸå› ï¼šç«¯å£è¢«å ç”¨ / Python ç¼ºå°‘ç»„ä»¶ / æ€æ¯’è½¯ä»¶æ‹¦æˆªã€‚
+echo   [X] ²ÉÑù·şÎñÔÚ 12 ÃëÄÚÃ»ÓĞÆğÀ´¡£
+echo       ³£¼ûÔ­Òò£º¶Ë¿Ú±»Õ¼ÓÃ / Python È±ÉÙ×é¼ş / É±¶¾Èí¼şÀ¹½Ø¡£
 echo.
 if exist "%~dp0nexus.log" (
   echo   ---------- nexus.log ----------
@@ -111,12 +111,12 @@ if exist "%~dp0nexus.log" (
   start "" notepad "%~dp0nexus.log"
 )
 echo.
-echo   æŒ‰ä»»æ„é”®è¿è¡Œå®Œæ•´è¯Šæ–­â€¦
+echo   °´ÈÎÒâ¼üÔËĞĞÍêÕûÕï¶Ï¡­
 pause >nul
-call "%~dp0è¯Šæ–­ NEXUS.bat"
+call "%~dp0Õï¶Ï NEXUS.bat"
 exit /b 1
 
 :ok
-echo   å¯åŠ¨æˆåŠŸï¼šhttp://127.0.0.1:!PORT!/
+echo   Æô¶¯³É¹¦£ºhttp://127.0.0.1:!PORT!/
 start "" http://127.0.0.1:!PORT!/
 exit /b 0
