@@ -42,7 +42,7 @@
   const S = {
     engine: 'flow', theme: 'silver', turbo: false,
     settings: JSON.parse(JSON.stringify(DEFAULTS)),
-    snap: null, prevSeq: 0, offline: false, lastOk: 0,
+    snap: null, prevSeq: 0, offline: false, lastOk: 0, misses: 0,
     focused: null, previews: {}, speedMul: 1,
     smoothSpeed: [0.02, 0.02, 0.02, 0.02, 0.02],
     chan: CH.map(c => ({ ...c, value: null, norm: 0, speed: 0.02, available: false, overload: false })),
@@ -221,31 +221,43 @@
   }
 
   // ------------------------------------------------------------------ 采样
+  let pollTimer = 0;
   async function poll() {
-    if (S.pausePoll) return;              // 验收测试用：隔离测试数据不写回真实界面
+    clearTimeout(pollTimer);
+    if (S.pausePoll) { pollTimer = setTimeout(poll, 1000); return; }
+    const ctrl = new AbortController();
+    const kill = setTimeout(() => ctrl.abort(), 4000);
     try {
-      const res = await fetch('/api/sample', { cache: 'no-store' });
+      const res = await fetch('/api/sample', { cache: 'no-store', signal: ctrl.signal });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const snap = await res.json();
       if (!snap || !snap.seq) throw new Error('空采样');
-      S.offline = false;
+      // 只要拿到响应就算链路正常：即使序号没变（同一秒内重复请求）也要清掉离线提示
+      S.misses = 0;
+      if (S.offline) { S.offline = false; showOffline(false); }
       if (snap.seq === S.prevSeq) return;       // 同一次采样不重复生成任务
       S.prevSeq = snap.seq;
       S.snap = snap;
       S.lastOk = performance.now();
       applySnapshot(snap);
     } catch (e) {
-      S.offline = true;
-      if (performance.now() - S.lastOk > 1200) showOffline(true);
+      S.misses = (S.misses || 0) + 1;
+      // 偶发一次超时不弹提示，连续两次失败才认为真的断了
+      if (S.misses >= 2) { S.offline = true; showOffline(true); }
+    } finally {
+      clearTimeout(kill);
+      pollTimer = setTimeout(poll, 1000);
     }
   }
 
-  function showOffline(on) {
-    $('#offline').classList.toggle('show', on);
-    $('#connDot').classList.toggle('bad', on);
-    $('#connText').textContent = on ? '采样服务未连接' : '本机实时连接';
-    $('#sbDot').classList.toggle('bad', on);
-    $('#sbState').textContent = on ? '采样离线' : '采样正常';
+  function showOffline(on, stale) {
+    const el = $('#offline');
+    if (on) el.textContent = stale ? '采样数据延迟，正在等待最新读数……' : '采样服务未连接，正在重试……';
+    el.classList.toggle('show', !!on);
+    $('#connDot').classList.toggle('bad', !!on);
+    $('#connText').textContent = on ? (stale ? '数据延迟' : '采样服务未连接') : '本机实时连接';
+    $('#sbDot').classList.toggle('bad', !!on);
+    $('#sbState').textContent = on ? (stale ? '数据延迟' : '采样离线') : '采样正常';
   }
 
   function applySnapshot(s) {
@@ -759,9 +771,9 @@
       S.fps = fps;
       $('#sbFps').textContent = 'FPS ' + fps;
     }
-    if (S.snap && !S.offline && (now - S.lastOk) > 3200) {
+    if (S.snap && !S.offline && (Date.now() - S.snap.ts) > 6000) {
       S.offline = true;
-      showOffline(true);           // 数据过期按离线处理，不显示陈旧读数冒充实时
+      showOffline(true, true);     // 数据过期按延迟处理，不拿陈旧值冒充实时
     }
     if (S.frames % 30 === 0) {
       renderReceivers();
@@ -881,7 +893,6 @@
     measure();
 
     poll();
-    setInterval(poll, 1000);
     requestAnimationFrame(frame);
     requestAnimationFrame(t => { last = t; });
     // 性能自测钩子：直接在页面里跑 N 帧，返回平均每帧毫秒（含 GL 提交）
